@@ -203,6 +203,10 @@ func benchmark(cpu, trial int) bool {
 
 		// to put the program in the foreground we need the window handle
 		if !FindWindowAndSetOnTop("lava triangle") {
+			if lava.kill() { // kill directly the process
+				hwnd, _ := FindWindow("lava triangle")
+				DestroyWindow(hwnd)
+			}
 			continue
 		}
 		break
@@ -229,7 +233,7 @@ func benchmark(cpu, trial int) bool {
 
 	if lava.kill() { // kill directly the process
 		hwnd, _ := FindWindow("lava triangle")
-		DestroyWindow(uintptr(hwnd))
+		DestroyWindow(hwnd)
 	}
 
 	if FileExists(filepath.Join(tempFolder, tempfile+".csv")) {

@@ -20,6 +20,9 @@ var (
 	procDestroyWindow       = user32.MustFindProc("DestroyWindow")       // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-destroywindow
 	procOpenInputDesktop    = user32.MustFindProc("OpenInputDesktop")    // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-openinputdesktop
 	procCloseDesktop        = user32.MustFindProc("CloseDesktop")        // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-closedesktop
+	procIsIconic            = user32.MustFindProc("IsIconic")            // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-isiconic
+	procShowWindow          = user32.MustFindProc("ShowWindow")          // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow
+	procIsWindowVisible     = user32.MustFindProc("IsWindowVisible")     // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-iswindowvisible
 )
 
 const PROCESS_QUERY_LIMITED_INFORMATION = 0x0400
@@ -95,13 +98,28 @@ func pid_is_running(pid uint32) (bool, syscall.Handle) {
 	return true, handle
 }
 
-func SetTopWindow(hwnd uintptr) {
+func SetTopWindow(hwnd uintptr) bool {
 	for {
 		time.Sleep(400 * time.Millisecond)
-		foregroundwindow, _, _ := procGetForegroundWindow.Call()
-		if hwnd == foregroundwindow {
-			break
+
+		ret, _, _ := procIsWindowVisible.Call(hwnd)
+		if ret != 1 { // window is not visible
+			return false
 		}
+
+		ret, _, _ = procIsIconic.Call(hwnd)
+		if ret == 1 { // IsIconic
+			return false
+			// UIPI "User Interface Privilege Isolation"
+			// ret, _, err := syscall.Syscall(procShowWindow.Addr(), 2, hwnd, uintptr(SW_RESTORE), 0)
+			// log.Println("procShowWindow\t\t", hwnd, (ret == 1), ret, err)
+		}
+
+		ret, _, _ = procGetForegroundWindow.Call()
+		if hwnd == ret { // hwnd == foregroundwindow
+			return true
+		}
+
 		procSetForegroundWindow.Call(hwnd)
 	}
 }

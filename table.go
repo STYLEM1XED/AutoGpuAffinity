@@ -40,6 +40,11 @@ var (
 	defaultStyle = lipgloss.NewStyle()
 )
 
+var CPUPoints map[int]uint
+var topCPU1 uint
+var topCPU2 uint
+var topCPU3 uint
+
 type format struct {
 	Array  []float64
 	Higher []float64
@@ -56,6 +61,7 @@ func tableOutput(cpuList []CPUResultList) {
 	var tableSettings TableSettings
 	tableSettings.Lengths = make([]int, len(header))
 	tableSettings.Data = make([]format, len(header))
+	CPUPoints = make(map[int]uint, len(header))
 
 	for i := 0; i < len(header); i++ {
 		tableSettings.Lengths[i] = lipgloss.Width(header[i]) + paddingRight
@@ -142,30 +148,51 @@ func tableOutput(cpuList []CPUResultList) {
 
 	for i, cpu := range cpuList {
 		fmt.Print(defaultStyle.Bold(true).Width(tableSettings.Lengths[0]).Render(fmt.Sprintf("CPU%d", i)))
-		tableSettings.GetColor_Max(cpu.Max, 1)
-		tableSettings.GetColor_Max(cpu.Avg, 2)
-		tableSettings.GetColor_Max(cpu.Min, 3)
-		tableSettings.GetColor_Max(cpu.Percent1, 4)
-		tableSettings.GetColor_Max(cpu.Percent01, 5)
-		tableSettings.GetColor_Max(cpu.Percent001, 6)
-		tableSettings.GetColor_Max(cpu.Percent0005, 7)
-		tableSettings.GetColor_Max(cpu.LowsOne, 8)
-		tableSettings.GetColor_Max(cpu.LowsPoint1, 9)
-		tableSettings.GetColor_Max(cpu.LowsPoint01, 10)
-		tableSettings.GetColor_Max(cpu.LowsPoint005, 11)
+		tableSettings.GetColor_Max(cpu.Max, 1, i)
+		tableSettings.GetColor_Max(cpu.Avg, 2, i)
+		tableSettings.GetColor_Max(cpu.Min, 3, i)
+		tableSettings.GetColor_Max(cpu.Percent1, 4, i)
+		tableSettings.GetColor_Max(cpu.Percent01, 5, i)
+		tableSettings.GetColor_Max(cpu.Percent001, 6, i)
+		tableSettings.GetColor_Max(cpu.Percent0005, 7, i)
+		tableSettings.GetColor_Max(cpu.LowsOne, 8, i)
+		tableSettings.GetColor_Max(cpu.LowsPoint1, 9, i)
+		tableSettings.GetColor_Max(cpu.LowsPoint01, 10, i)
+		tableSettings.GetColor_Max(cpu.LowsPoint005, 11, i)
 		fmt.Print("\n")
+	}
+
+	for _, points := range CPUPoints {
+		if points > topCPU1 {
+			topCPU1 = points
+		}
+	}
+
+	for _, points := range CPUPoints {
+		if points > topCPU2 && points != topCPU1 {
+			topCPU2 = points
+		}
+	}
+
+	for _, points := range CPUPoints {
+		if points > topCPU3 && points < topCPU2 {
+			topCPU3 = points
+		}
 	}
 
 }
 
-func (tableSettings *TableSettings) GetColor_Max(value float64, i int) {
+func (tableSettings *TableSettings) GetColor_Max(value float64, i, cpuID int) {
 	switch value {
 	case tableSettings.Data[i].Higher[0]:
 		fmt.Print(defaultStyle.Width(tableSettings.Lengths[i]).Foreground(highest[0]).Render(fmt.Sprintf("%.2f", value)))
+		CPUPoints[cpuID] += 1
 	case tableSettings.Data[i].Higher[1]:
 		fmt.Print(defaultStyle.Width(tableSettings.Lengths[i]).Foreground(highest[1]).Render(fmt.Sprintf("%.2f", value)))
+		CPUPoints[cpuID] += 2
 	case tableSettings.Data[i].Higher[2]:
 		fmt.Print(defaultStyle.Width(tableSettings.Lengths[i]).Foreground(highest[2]).Render(fmt.Sprintf("%.2f", value)))
+		CPUPoints[cpuID] += 3
 	// case Lower[0]:
 	// 	fmt.Print(defaultStyle.Width(tableSettings.Lengths[i]).Foreground(lowest[0]).Render(fmt.Sprintf("%.2f", value)))
 	// case Lower[1]:
@@ -175,5 +202,4 @@ func (tableSettings *TableSettings) GetColor_Max(value float64, i int) {
 	default:
 		fmt.Print(defaultStyle.Width(tableSettings.Lengths[i]).Render(fmt.Sprintf("%.2f", value)))
 	}
-
 }

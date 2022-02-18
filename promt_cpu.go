@@ -120,7 +120,17 @@ func (m cpumodel) View() string {
 			changeTest = true
 		}
 
-		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, choice)
+		switch CPUPoints[i] {
+		case topCPU1:
+			s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, defaultStyle.Foreground(highest[2]).Render(choice))
+		case topCPU2:
+			s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, defaultStyle.Foreground(highest[1]).Render(choice))
+		case topCPU3:
+			s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, defaultStyle.Foreground(highest[0]).Render(choice))
+		default:
+			s += defaultStyle.Render(fmt.Sprintf("%s [%s] %s\n", cursor, checked, choice))
+		}
+
 	}
 
 	if changeTest {

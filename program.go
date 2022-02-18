@@ -81,14 +81,19 @@ func FindWindowAndSetOnTop(title string) bool {
 		index++
 		time.Sleep(time.Second)
 		hwnd, err := FindWindow(title)
-		if err != nil {
+		if err != nil || hwnd == 0 {
 			if index > 10 {
 				return false // Timeout
 			}
 			continue
 		}
-		SetTopWindow(hwnd)
-		break
+
+		if IsIconic(hwnd) {
+			return false // minimized window
+		}
+
+		if SetTopWindow(hwnd) {
+			return true
+		}
 	}
-	return true
 }
